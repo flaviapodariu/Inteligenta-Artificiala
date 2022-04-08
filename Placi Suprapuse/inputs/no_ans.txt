@@ -1,5 +1,3 @@
-aa*bb.cc
-.ddd..e*
-..ffffgg
-..jjii.k
-lll.mmmn
+aaa**.cc
+.dddd.eu
+
