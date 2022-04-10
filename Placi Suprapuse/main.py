@@ -50,29 +50,33 @@ class NodParcurgere:
         sir += "Cost " + str(self.f) + "\n"
         return sir
 
-
     def genereaza_succesori(self, tip_euristica="euristica banala"):
         lista_succesori = []
-        # caut succesorii de la primul nivel pe care gasesc o bila
-        nivelStart = -1
-        for i, nivel in enumerate(self.info):
-            if '*' in nivel:
-                nivelStart = i
-                break
+        if tip_euristica == "euristica_banala":
+            nivel_start = 0
+        else:
+            # caut succesorii de la primul nivel pe care gasesc o bila
+            nivel_start = -1
+            for i, nivel in enumerate(self.info):
+                if '*' in nivel:
+                    nivel_start = i
+                    break
 
-        for linie in range(nivelStart, len(self.info)):  # caut succesori incepand cu nivelul primei bile
+        for linie in range(nivel_start, len(self.info)):  # caut succesori incepand cu nivelul primei bile
             idx_bila_n = -1
             for i, elem in enumerate(self.info[linie]):
                 if elem == '.':
                     idx_spatiu = i
-                    if 0 < idx_spatiu <= len(self.info[linie]) - 1:
+                    if self.info[linie][max(nivel_start, i - 1)] != '*' \
+                            and 0 < idx_spatiu <= len(self.info[linie]) - 1:  # daca i = 0, i-1 out of bounds
                         directie = -1  # stanga
                         succesor = self.succesor_caz_bloc(idx_spatiu,
                                                           linie, directie)
                         if succesor is not None:
                             lista_succesori.append(succesor)
 
-                    if 0 <= idx_spatiu < len(self.info[linie]) - 1:
+                    if self.info[linie][min(i + 1, len(self.info) - 1)] != '*' \
+                            and 0 <= idx_spatiu < len(self.info[linie]) - 1:
                         directie = 1  # dreapta
                         succesor = self.succesor_caz_bloc(idx_spatiu,
                                                           linie, directie)
@@ -86,7 +90,7 @@ class NodParcurgere:
 
                     if self.info[linie][i - 1] != '.' \
                             and self.info[linie][idx_bila_n + 1] != '.':
-                        continue
+                        continue  # bila este blocata intre blocuri
                     if self.info[linie][i - 1] == '.' \
                             and self.info[linie][idx_bila_n + 1] == '.':
                         continue
@@ -96,16 +100,14 @@ class NodParcurgere:
                     else:  # mut bila spre stanga
                         directie = -1
 
-                    start_bloc = self.index_nou_spatiu(self.info[linie], i - 1, -directie, False)
-                    marime_bloc = idx_bila_1 - start_bloc
+                    start_bloc = self.index_nou_start(self.info[linie], i - 1, -directie, False)
+                    marime_bloc = abs(idx_bila_1 - start_bloc)
 
                     succesor = self.succesor_caz_bila(nr_bile, idx_bila_1,
                                                       idx_bila_n, linie, directie, marime_bloc)
                     if succesor is not None:
                         lista_succesori.append(succesor)
 
-                else:
-                    continue
 
         return lista_succesori
 
@@ -119,7 +121,7 @@ class NodParcurgere:
         :return: harta noua
         """
         if coord_bila[0] == coord_bila_noi[0]:  # bila nu cade pe alt nivel
-            h = harta[coord_bila[0]]
+            h = copy.deepcopy(harta[coord_bila[0]])
 
             if directie == 1:
                 h = h[:coord_bila[1]] + '.' + '*' + h[coord_bila[1] + 2:]
@@ -146,11 +148,13 @@ class NodParcurgere:
                 return i - 1  # indexul ultimei bile
         return idx  # indexul bilei curente (exista doar o bila in lant)
 
-    def index_nou_spatiu(self, nivel, j, directie, flag_bloc = True):
+    def index_nou_start(self, nivel, j, directie, flag_bloc=True):
         """
         :param nivel: nivelul pe care caut
         :param j: indexul spatiului
         :param directie: -1 pt cautare spre stanga, 1 pt dreapta
+        :param flag_bloc: True -> index spatiu nou, False -> index spatiu nou dupa ce un bloc impinge bile
+                                                            (indexul lui bloc[0])
         :return: indexul primei bucati din blocul pe care il voi muta/ noul index pt spatiu
                  -1 pt eroare
         """
@@ -171,18 +175,17 @@ class NodParcurgere:
 
     def mutare_spatiu(self, harta, nivel, idx_spatiu, idx_spatiu_nou):
         # cazul in care tragem un bloc de sub bila => bila cade pe urm nivel
-        if harta[nivel - 1][idx_spatiu_nou] != '*':
+        if harta[max(0, nivel - 1)][idx_spatiu_nou] != '*':
             a = '.'
         else:
             a = '*'
             harta[nivel - 1] = harta[nivel - 1][:idx_spatiu_nou] + '.' + harta[nivel - 1][idx_spatiu_nou + 1:]
 
         b = copy.deepcopy(harta[nivel][idx_spatiu_nou])
-
         if idx_spatiu > idx_spatiu_nou:  # mut spatiul spre stanga
             harta[nivel] = harta[nivel][:idx_spatiu_nou] + a + \
                            harta[nivel][idx_spatiu_nou + 1: idx_spatiu] + b + harta[nivel][idx_spatiu + 1:]
-        else:
+        elif idx_spatiu < idx_spatiu_nou:
             harta[nivel] = harta[nivel][:idx_spatiu] + b + \
                            harta[nivel][idx_spatiu + 1: idx_spatiu_nou] + a + harta[nivel][idx_spatiu_nou + 1:]
 
@@ -206,7 +209,7 @@ class NodParcurgere:
             return
 
         copie_harta = copy.deepcopy(self)
-        idx_spatiu_nou = self.index_nou_spatiu(copie_harta.info[nivel], idx_spatiu, directie)
+        idx_spatiu_nou = self.index_nou_start(copie_harta.info[nivel], idx_spatiu, directie)
         if idx_spatiu_nou is None:
             return
 
@@ -227,6 +230,16 @@ class NodParcurgere:
         return
 
     def succesor_caz_bila(self, nr_bile, bila_start, bila_stop, nivel, directie, marime_bloc):
+        """
+
+        :param nr_bile: nr de bile din lant
+        :param bila_start: prima bila de langa blocul care va muta bilele
+        :param bila_stop: cea mai departata bila de bloc
+        :param nivel: nivelul din harta
+        :param directie: -1 pt stanga, 1 pt dreapta
+        :param marime_bloc: marimea blocului care va muta bilele (pt calc costului)
+        :return: starea hartii dupa mutarea bilei/ bilelor
+        """
         if directie == -1:
             ultima_bila = bila_start
             prima_bila = bila_stop
@@ -236,8 +249,11 @@ class NodParcurgere:
 
         copie_harta = copy.deepcopy(self)
         copie_harta.info = self.harta_bile_impinse(copie_harta.info, nivel, ultima_bila, nr_bile, directie)
-        copie_harta.info = self.mutare_spatiu(copie_harta.info, nivel, prima_bila, prima_bila - (directie * marime_bloc))
+        copie_harta.info = self.mutare_spatiu(copie_harta.info, nivel, prima_bila,
+                                              prima_bila - (directie * marime_bloc))
+
         copie_harta.info[len(copie_harta.info) - 1] = self.elimina_bile(copie_harta.info[len(copie_harta.info) - 1])
+
         return NodParcurgere(copie_harta.info, self, 2 * (1 + marime_bloc), self.f)
 
     def elimina_bile(self, nivel):
@@ -245,14 +261,14 @@ class NodParcurgere:
         return nivel
 
     def are_sustinere(self, nivel_urm, coloana, bloc_size):
-        '''
+        """
 
         :param nivel_urm: nivelul de sub bloculul pe care vreau sa il mut
         :param coloana: coloana blocului pe care vreau sa il mut
         :param bloc_size: lungimea blocului pe care vreau sa il mut
         :return: True daca exista o alta valoare decat '.' (are sustinere de la alt bloc)
                  False* altfel
-        '''
+        """
         for elem in range(coloana, coloana + bloc_size):
             if nivel_urm[elem] != '.':
                 return True
@@ -294,11 +310,13 @@ class Graph:
         # vom simula o stiva prin relatia de parinte a nodului curent
         vizitat = [self.start.info]
         while nr_solutii_cautate > 0:
-             self.df(NodParcurgere(self.start.info, None), nr_solutii_cautate, vizitat)
+            self.df(NodParcurgere(self.start.info, None), nr_solutii_cautate, vizitat)
 
     def df(self, nod_curent, nr_sol_cautate, vizitat):
-        if nr_sol_cautate <= 0:  # testul acesta s-ar valida doar daca in apelul initial avem df(start,if nrSolutiiCautate=0)
+        # testul acesta s-ar valida doar daca in apelul initial avem df(start,if nrSolutiiCautate=0)
+        if nr_sol_cautate <= 0:
             return nr_sol_cautate
+
         # print("Stiva actuala:\n" + (str(nod_curent.afis_drum())))
         # input()
         if nod_curent.testeaza_scop():
@@ -307,7 +325,6 @@ class Graph:
             print("\n----------------\n")
             input()
             nr_sol_cautate -= 1
-            nod_curent = nod_curent.parinte
             if nr_sol_cautate == 0:
                 return nr_sol_cautate
 
@@ -340,5 +357,5 @@ class Graph:
 g = Graph("inputs/no_ans.txt")
 # l = g.start.genereaza_succesori()
 # for nod in l:
-#     print(nod)
+    # print(nod)
 g.depth_first()
