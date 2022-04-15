@@ -1,3 +1,2 @@
-aaa.*cc.
-..ddddeu
-
+aa*bb.cc
+.ddd..e*
