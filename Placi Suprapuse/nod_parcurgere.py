@@ -12,11 +12,6 @@ class NodParcurgere:
         self.f = self.g + self.h
 
     def testeaza_scop(self):
-        # for nivel in self.info:
-        #     for element in nivel:
-        #         if element == '*':
-        #             return False
-        # return True
         return True if self.nr_bile == 0 else False
 
     def obtine_drum(self):
@@ -45,150 +40,81 @@ class NodParcurgere:
     def __str__(self):
         sir = ""
         for linie in self.info:
-            sir += " ".join([str(elem) for elem in linie]) + "\n"
+            for elem in linie:
+                lungime = elem[1] - elem[0] + 1
+                for _ in range(lungime):
+                    sir += elem[2]
+            sir += "\n"
         sir += "Cost " + str(self.f) + "\n"
         return sir
 
     def genereaza_succesori(self, tip_euristica="euristica banala"):
         lista_succesori = []
-        if tip_euristica == "euristica_banala":
-            nivel_start = 0
-        else:
-            # caut succesorii de la primul nivel pe care gasesc o bila
-            nivel_start = 0
-            for i, nivel in enumerate(self.info):
-                if '*' in nivel:
-                    nivel_start = i
-                    break
+        for idx_nivel, nivel in enumerate(self.info):
+            for idx_placa, placa in enumerate(nivel):
+                if placa[2] == '*':
+                    placa_prec = nivel[max(0, idx_placa-1)][2]
+                    placa_urm = nivel[min(idx_placa + 1, len(nivel)-1)][2]
 
-        for linie in range(nivel_start, self.nr_niveluri):  # caut succesori incepand cu nivelul primei bile
-            idx_bila_n = -1
-            for i, elem in enumerate(self.info[linie]):
-                if elem == '*' and i > idx_bila_n:
-                    idx_bila_1 = i
-                    idx_bila_n = self.index_bila_n(self.info[linie], idx_bila_1)
-                    nr_bile = idx_bila_n - idx_bila_1 + 1
-
-                    if self.info[linie][i - 1] != '.' \
-                            and self.info[linie][min(idx_bila_n + 1, self.lungime - 1)] != '.':
-                        continue  # bila este blocata intre blocuri
-                    if self.info[linie][i - 1] == '.' \
-                            and self.info[linie][min(idx_bila_n + 1, self.lungime - 1)] == '.':
+                    if placa_prec == '.' and placa_urm == '.':
+                        # cazul in care nu exista placi pt a impinge bilele
                         continue
 
-                    if self.info[linie][i - 1] != '.':  # mut bila spre dreapta
+                    if placa_prec != '.' and placa_urm != '.':
+                        # cazul in care bila/bilele sunt blocate intre placi
+                        continue
+                    elif placa_prec != '.':
+                        # pot impinge bila spre dreapta
                         directie = 1
-                    else:  # mut bila spre stanga
+                    else:
+                        # pot impinge bila spre stanga
                         directie = -1
+                    self.mutare_bile(idx_nivel, idx_placa, directie)
+                elif placa[2] == '.':
 
-                    start_bloc = self.index_nou_start(self.info[linie], i - 1, -directie, False)
-                    marime_bloc = abs(idx_bila_1 - start_bloc)
 
-                    succesor = self.succesor_caz_bila(nr_bile, idx_bila_1,
-                                                      idx_bila_n, linie, directie, marime_bloc)
-                    if succesor is not None:
-                        lista_succesori.append(succesor)
-
-                elif elem == '.':
-                    idx_spatiu = i
-                    if self.info[linie][max(nivel_start, i - 1)] != '*' \
-                            and 0 < idx_spatiu <= self.lungime - 1:  # daca i = 0, i-1 out of bounds
-                        directie = -1  # stanga
-                        succesor = self.succesor_caz_bloc(idx_spatiu,
-                                                          linie, directie)
-                        if succesor is not None:
-                            lista_succesori.append(succesor)
-
-                    if self.info[linie][min(i + 1, self.nr_niveluri - 1)] != '*' \
-                            and 0 <= idx_spatiu < self.lungime - 1:
-                        directie = 1  # dreapta
-                        succesor = self.succesor_caz_bloc(idx_spatiu,
-                                                          linie, directie)
-                        if succesor is not None:
-                            lista_succesori.append(succesor)
 
         return lista_succesori
 
-    def mutare_bila(self, harta, coord_bila, coord_bila_noi, directie):
-        """
+    def mutare_bile(self, idx_nivel, idx_placa, directie):
+        copie = copy.deepcopy(self.info)
+        copie[idx_nivel][idx_placa][0] += directie
+        copie[idx_nivel][idx_placa][1] += directie
+        prec = copie[idx_nivel][idx_placa-1]
+        urm = copie[idx_nivel][idx_placa+1]
 
-        :param harta: nodul curent
-        :param coord_bila: tuplu care contine linia si coloana bilei inainte de mutare
-        :param coord_bila_noi: tuplu care contine linia si coloana bilei dupa mutare
-        :param directie: -1 pt stanga, 1 pt dreapta
-        :return: harta noua
-        """
-        if coord_bila[0] == coord_bila_noi[0]:  # bila nu cade pe alt nivel
-            h = copy.deepcopy(harta[coord_bila[0]])
-
-            if directie == 1:
-                h = h[:coord_bila[1]] + '.' + '*' + h[coord_bila[1] + 2:]
+        if directie == 1:
+            prec[0] += directie
+            prec[1] += directie
+            if copie[idx_nivel][max(0, idx_placa-2)][2] == '.':
+                copie[idx_nivel][max(0, idx_placa - 2)][1] += directie
             else:
-                h = h[:coord_bila[1] - 1] + '*' + '.' + h[coord_bila[1] + 1:]
-            harta[coord_bila[0]] = h
-        else:
-            niv_bila = copy.deepcopy(harta[coord_bila[0]])
-            niv_bila_nou = copy.deepcopy(harta[coord_bila_noi[0]])
+                tuplu_nou = (prec[0]-1, prec[0]-1, '.')
+                copie[idx_nivel].insert(max(0, idx_placa - 2), tuplu_nou)
+            urm[0] += directie
 
-            niv_bila = niv_bila[:coord_bila[1]] + '.' + niv_bila[coord_bila[1] + 1:]
-            niv_bila_nou = niv_bila_nou[:coord_bila_noi[1]] + '*' + niv_bila_nou[coord_bila_noi[1] + 1:]
+            if urm[0] > urm[1]:
+                # in urma mutarii, spatiul a fost acoperit integral de bile
+                copie[idx_nivel].pop(idx_placa + 1)
 
-            harta[coord_bila[0]] = niv_bila
-            harta[coord_bila_noi[0]] = niv_bila_nou
+        if directie == -1:
+            nr_elem_nivel = len(copie)-1
+            urm[0] += directie
+            urm[1] += directie
+            if copie[idx_nivel][min(idx_placa+2, nr_elem_nivel)][2] == '.':
+                copie[idx_nivel][min(idx_placa + 2, nr_elem_nivel)][0] += directie
+            else:
+                tuplu_nou = (urm[1]+1, urm[1]+1, '.')
+                copie[idx_nivel].insert(min(idx_placa+2, nr_elem_nivel), tuplu_nou)
 
-        return harta
+            prec[1] += directie
+            if prec[0] > prec[1]:
+                copie[idx_nivel].pop(idx_placa - 1)
 
-    def index_bila_n(self, nivel, idx_bila_1):
-        prev = nivel[idx_bila_1]
-        idx = idx_bila_1
-        for i in range(idx, len(nivel)):
-            if nivel[i] != prev:
-                return i - 1  # indexul ultimei bile
-        return idx  # indexul bilei curente (exista doar o bila in lant)
+        copie[idx_nivel], nr_bile = self.elimina_bile(copie[idx_nivel])
 
-    def index_nou_start(self, nivel, j, directie, flag_bloc=True):
-        """
-        :param nivel: nivelul pe care caut
-        :param j: indexul spatiului
-        :param directie: -1 pt cautare spre stanga, 1 pt dreapta
-        :param flag_bloc: True -> index spatiu nou, False -> index spatiu nou dupa ce un bloc impinge bile
-                                                            (indexul lui bloc[0])
-        :return: indexul primei bucati din blocul pe care il voi muta/ noul index pt spatiu
-                 -1 pt eroare
-        """
+        return NodParcurgere(copie, self, nr_bile)
 
-        if directie != -1 and directie != 1:
-            return
-
-        j += directie
-        prev = nivel[j]
-        if prev == '*' and flag_bloc:
-            return
-        while nivel[j] == prev:
-            if j == len(nivel) - 1 or j == 0:
-                return j
-            j += directie
-
-        return j - directie
-
-    def mutare_spatiu(self, harta, nivel, idx_spatiu, idx_spatiu_nou):
-        if harta is None:
-            return
-        # cazul in care tragem un bloc de sub bila => bila cade pe urm nivel
-        a = '.'
-        if nivel > 0 and harta[nivel - 1][idx_spatiu_nou] == '*':
-            a = '*'
-            harta[nivel - 1] = harta[nivel - 1][:idx_spatiu_nou] + '.' + harta[nivel - 1][idx_spatiu_nou + 1:]
-
-        b = copy.deepcopy(harta[nivel][idx_spatiu_nou])
-        if idx_spatiu > idx_spatiu_nou:  # mut spatiul spre stanga
-            harta[nivel] = harta[nivel][:idx_spatiu_nou] + a + \
-                           harta[nivel][idx_spatiu_nou + 1: idx_spatiu] + b + harta[nivel][idx_spatiu + 1:]
-        elif idx_spatiu < idx_spatiu_nou:
-            harta[nivel] = harta[nivel][:idx_spatiu] + b + \
-                           harta[nivel][idx_spatiu + 1: idx_spatiu_nou] + a + harta[nivel][idx_spatiu_nou + 1:]
-
-        return harta
 
     def bila_sparta_alunecare(self, nod_curent, nivel, idx_spatiu):
         # stim ca nod_curent.info[nivel][idx_spatiu] este un spatiu
@@ -258,10 +184,11 @@ class NodParcurgere:
         return NodParcurgere(copie_harta.info, self, n_bile, 2 * (1 + marime_bloc), self.f)
 
     def elimina_bile(self, nivel):
-        if nivel is None:
-            return
-        bile = nivel.count('*')
-        nivel = nivel.replace('*', '.')
+        bile = 0
+        for elem in nivel:
+            if elem[2] == '*':
+                elem[2] = '.'
+                bile = elem[1] - elem[0] + 1
         return nivel, self.nr_bile - bile
 
     def are_sustinere(self, nivel_urm, coloana, bloc_size):
@@ -300,4 +227,6 @@ class NodParcurgere:
             coloana -= directie
 
         return harta
+
+
 
