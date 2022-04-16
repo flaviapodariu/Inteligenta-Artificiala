@@ -1,2 +1,2 @@
-aa*bb.cc
-.ddd..e*
+.aa...*bb
+.ddd..eee

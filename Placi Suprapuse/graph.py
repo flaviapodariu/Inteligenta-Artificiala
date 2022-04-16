@@ -26,7 +26,7 @@ class Graph:
 
                     if placa == '*':
                         nr_bile += final_placa - coloana
-                    nivel_harta.append((coloana, final_placa - 1, placa))
+                    nivel_harta.append([coloana, final_placa - 1, placa])
                     coloana = final_placa  # urmatoarea placa
                 harta.append(nivel_harta)
             print(*harta, sep="\n")

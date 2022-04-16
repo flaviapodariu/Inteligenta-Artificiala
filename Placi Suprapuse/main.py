@@ -26,9 +26,9 @@ from graph import Graph
 
 g = Graph("inputs/no_ans.txt")
 print(g.start)
-# l = g.start.genereaza_succesori()
-# for nod in l:
-# print(nod)
+l = g.start.genereaza_succesori()
+for nod in l:
+    print(nod)
 # g.depth_first()
 # g.bf()
 # g.dfi()

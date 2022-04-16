@@ -1,4 +1,6 @@
 import copy
+from bisect import bisect_right, bisect_left
+
 
 class NodParcurgere:
     def __init__(self, info, parinte, nr_bile, cost=0, h=0):
@@ -53,8 +55,8 @@ class NodParcurgere:
         for idx_nivel, nivel in enumerate(self.info):
             for idx_placa, placa in enumerate(nivel):
                 if placa[2] == '*':
-                    placa_prec = nivel[max(0, idx_placa-1)][2]
-                    placa_urm = nivel[min(idx_placa + 1, len(nivel)-1)][2]
+                    placa_prec = nivel[max(0, idx_placa - 1)][2]
+                    placa_urm = nivel[min(idx_placa + 1, len(nivel) - 1)][2]
 
                     if placa_prec == '.' and placa_urm == '.':
                         # cazul in care nu exista placi pt a impinge bilele
@@ -69,52 +71,105 @@ class NodParcurgere:
                     else:
                         # pot impinge bila spre stanga
                         directie = -1
-                    self.mutare_bile(idx_nivel, idx_placa, directie)
-                elif placa[2] == '.':
+                    lista_succesori.append(self.mutare_bile(idx_nivel, idx_placa, directie))
 
-
+                # elif placa[2] == '.':
 
         return lista_succesori
 
+    def bila_sparta_impingere(self, idx_nivel, idx_placa, directie):
+        # stim ca self.info[idx_nivel][idx_placa+directie] e un spatiu
+        # pt ca apelam functia din mutare_bile()
+        if directie == 1:
+            idx_spatiu = self.info[idx_nivel][idx_placa][1] + directie
+            idx_placa_niv1 = bisect_right(self.info[idx_nivel + 1], idx_spatiu, key=lambda x: x[0])
+
+        else:
+            idx_spatiu = self.info[idx_nivel][idx_placa][0] + directie
+            idx_placa_niv1 = bisect_left(self.info[idx_nivel + 1], idx_spatiu, key=lambda x: x[0])
+
+        if len(self.info) < 3:
+            return False, idx_placa_niv1 - 1
+
+        print(idx_placa_niv1)
+        if self.info[idx_nivel + 1][idx_placa_niv1][1] >= idx_spatiu and self.info[idx_nivel + 1][idx_placa_niv1][
+            2] == '.':
+            if directie == 1:
+                idx_placa_niv2 = bisect_right(self.info[idx_nivel + 2], idx_spatiu, key=lambda x: x[0])
+            else:
+                idx_placa_niv2 = bisect_left(self.info[idx_nivel + 2], idx_spatiu, key=lambda x: x[0])
+
+            if self.info[idx_nivel + 2][idx_placa_niv2][1] >= idx_spatiu and self.info[idx_nivel + 2][idx_placa_niv2][
+                2] == '.':
+                return True, -1
+
+            return False, idx_placa_niv1 - 1  # a intrat in primul if deci bila cade
+        return False, -1  # bila nu cade
+
     def mutare_bile(self, idx_nivel, idx_placa, directie):
         copie = copy.deepcopy(self.info)
+        nr_elem_nivel = len(copie) - 1
+
+        prev = copie[idx_nivel][idx_placa - 1]
+        urm = copie[idx_nivel][idx_placa + 1]
+        lung_placa_cost = prev[1] - prev[0] + 1 if directie == 1 else urm[1] - urm[0] + 1
+        print(copie)
+        test_bila = self.bila_sparta_impingere(idx_nivel, idx_placa, directie)
+        if test_bila[0]:
+            return
+        elif test_bila[1] != -1:
+            placa_schimb = copie[idx_nivel + 1][test_bila[1]]
+            idx_bila_cazuta = copie[idx_nivel][idx_placa][0] - 1 if directie == -1 else copie[idx_nivel][idx_placa][
+                                                                                            1] + 1
+
+            if placa_schimb[0] == placa_schimb[1]:
+                placa_schimb[2] = '*'
+            else:
+                bila = [idx_bila_cazuta, idx_bila_cazuta, '*']
+                copie[idx_nivel + 1].insert(test_bila[1], bila)
+                if directie == 1:
+                    spatiu = [copie[idx_nivel][idx_placa - 1][0], copie[idx_nivel][idx_placa - 1][0], '.']
+                    placa_schimb[0] += directie
+                else:
+                    spatiu = [copie[idx_nivel][idx_placa + 1][1], copie[idx_nivel][idx_placa + 1][1],
+                              '.']  # check for indexing problems
+                    placa_schimb[1] += directie
+
+                if placa_schimb[0] > placa_schimb[1]:
+                    copie[idx_nivel + 1].pop(test_bila[1])
+
+                if copie[idx_nivel][min(idx_placa - 2 * directie, len(copie[idx_nivel]) - 1)][2] != '.':
+                    copie[idx_nivel].insert(min(idx_placa - 2 * directie, len(copie[idx_nivel])), spatiu)
+                    # indexul placii cu bile nu se va mai muta dupa noua inserare (inserarea se va face dupa idx_placa)
+                else:
+                    copie[idx_nivel][idx_placa - 2 * directie][1] += 1
+
         copie[idx_nivel][idx_placa][0] += directie
         copie[idx_nivel][idx_placa][1] += directie
-        prec = copie[idx_nivel][idx_placa-1]
-        urm = copie[idx_nivel][idx_placa+1]
+
+        prec = copie[idx_nivel][max(0, idx_placa - 1)]
+        urm = copie[idx_nivel][min(idx_placa + 1, len(copie[idx_nivel]) - 1)]
 
         if directie == 1:
             prec[0] += directie
             prec[1] += directie
-            if copie[idx_nivel][max(0, idx_placa-2)][2] == '.':
-                copie[idx_nivel][max(0, idx_placa - 2)][1] += directie
-            else:
-                tuplu_nou = (prec[0]-1, prec[0]-1, '.')
-                copie[idx_nivel].insert(max(0, idx_placa - 2), tuplu_nou)
-            urm[0] += directie
+            # urm[0] += directie
 
             if urm[0] > urm[1]:
                 # in urma mutarii, spatiul a fost acoperit integral de bile
                 copie[idx_nivel].pop(idx_placa + 1)
 
         if directie == -1:
-            nr_elem_nivel = len(copie)-1
             urm[0] += directie
             urm[1] += directie
-            if copie[idx_nivel][min(idx_placa+2, nr_elem_nivel)][2] == '.':
-                copie[idx_nivel][min(idx_placa + 2, nr_elem_nivel)][0] += directie
-            else:
-                tuplu_nou = (urm[1]+1, urm[1]+1, '.')
-                copie[idx_nivel].insert(min(idx_placa+2, nr_elem_nivel), tuplu_nou)
 
-            prec[1] += directie
             if prec[0] > prec[1]:
                 copie[idx_nivel].pop(idx_placa - 1)
 
-        copie[idx_nivel], nr_bile = self.elimina_bile(copie[idx_nivel])
-
-        return NodParcurgere(copie, self, nr_bile)
-
+        copie[idx_nivel].pop(idx_placa)
+        copie[nr_elem_nivel], nr_bile = self.elimina_bile(copie[nr_elem_nivel])
+        print(copie)
+        return NodParcurgere(copie, self, nr_bile, 2 * (1 + lung_placa_cost))
 
     def bila_sparta_alunecare(self, nod_curent, nivel, idx_spatiu):
         # stim ca nod_curent.info[nivel][idx_spatiu] este un spatiu
@@ -122,12 +177,6 @@ class NodParcurgere:
             return nod_curent.info[nivel - 1][idx_spatiu] == '*' \
                    and nod_curent.info[nivel + 1][idx_spatiu] == '.'
         return False  # bila e maxim pe ultimul nivel => nu poate fi sparta
-
-    def bila_sparta_impingere(self, nod_curent, nivel, idx_bila_impinsa):
-        if nivel < self.nr_niveluri - 2:
-            return nod_curent.info[nivel + 1][idx_bila_impinsa] == '.' \
-                   and nod_curent.info[nivel + 2][idx_bila_impinsa] == '.'
-        return False
 
     def succesor_caz_bloc(self, idx_spatiu, nivel, directie):
         if directie != -1 and directie != 1:
@@ -227,6 +276,3 @@ class NodParcurgere:
             coloana -= directie
 
         return harta
-
-
-
