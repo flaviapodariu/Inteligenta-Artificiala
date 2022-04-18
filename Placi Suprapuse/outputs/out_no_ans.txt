@@ -1,0 +1,27 @@
+Breadth First 
+
+Solutie:
+1),
+ aa*bb.cc
+.ddd..e*
+Cost 0
+
+2),
+ aa*.bbcc
+.ddd..e.
+Cost 3
+
+3),
+ aa.bb.cc
+..dd..e.
+Cost 6
+
+Cost: 6
+Lungime: 3
+
+
+ Timp gasire solutie: 0.015617609024047852 
+
+----------------
+Depth First 
+
