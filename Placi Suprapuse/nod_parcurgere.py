@@ -26,7 +26,7 @@ class NodParcurgere:
     def afis_drum(self, fout, afis_cost=True, afis_lung=True):  # returneaza si lungimea drumului
         l = self.obtine_drum()
         for i, nod in enumerate(l):
-            fout.write(f"{i + 1}),\n {str(nod)}\n")
+            fout.write(f"{i + 1}),\n {nod}\n")
         if afis_cost:
             fout.write(f"Cost: {self.g}\n")
         if afis_lung:
@@ -213,6 +213,7 @@ class NodParcurgere:
         if test_bila[0]:
             return
         elif test_bila[1] != -1:
+            print(test_bila[1], idx_nivel)
             placa_schimb = copie[idx_nivel + 1][test_bila[1]]
             idx_bila_cazuta = copie[idx_nivel][idx_placa][0] - 1 if directie == -1 else copie[idx_nivel][idx_placa][
                                                                                             1] + 1

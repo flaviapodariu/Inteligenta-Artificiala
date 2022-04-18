@@ -1,0 +1,2 @@
+aaabb.cc
+ffff..*g

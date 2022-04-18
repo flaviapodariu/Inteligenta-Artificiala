@@ -5,10 +5,6 @@ import stopit
 import time
 
 
-# placile, bilele si spatiile sunt reprezentate ca tupluri de 3 elemente
-# tuplu[0] -> index start
-# tuplu[1] -> index stop
-# tuplu[2] -> elementul (caracter)
 class Graph:
     def __init__(self, nume_fisier):
         f = open(nume_fisier, "r")
@@ -33,6 +29,10 @@ class Graph:
             harta.append(nivel_harta)
         self.start = NodParcurgere(harta, None, nr_bile)
         self.nr_noduri = 0
+        self.start.elimina_bile(self.start.info[self.start.nr_niveluri-1])
+        if self.start.testeaza_scop():
+            print("Stare initiala este si stare finala")
+            sys.exit(0)
 
         for idx_nivel, linie in enumerate(harta):
             for idx_placa, placa in enumerate(linie):
@@ -53,8 +53,8 @@ class Graph:
                 return
             prev_sol = nr_solutii_cautate
 
-    def df(self, t1, fout, nod_curent, nr_sol_cautate, vizitat):
-        # testul acesta s-ar valida doar daca in apelul initial avem df(start,if nrSolutiiCautate=0)
+    def df(self, nod_curent, t1, fout, nr_sol_cautate, vizitat):
+        # testul acesta s-ar valida doar daca in apelul initial avem df(start,if nr_sol_cautate=0)
         if nr_sol_cautate <= 0:
             return nr_sol_cautate
         # print("Stiva actuala:\n" + (str(nod_curent.afis_drum())))
@@ -64,6 +64,7 @@ class Graph:
             fout.write(f"Solutie: \n")
             nod_curent.afis_drum(fout)
             fout.write(f"\n\n Timp gasire solutie: {t2 - t1} \n")
+            fout.write(f"Numar maxim de noduri in memorie: {self.nr_noduri}\n")
             fout.write("\n----------------\n")
             nr_sol_cautate -= 1
             if nr_sol_cautate <= 0:
@@ -96,6 +97,7 @@ class Graph:
                 fout.write("Solutie:\n")
                 nod_curent.afis_drum(fout)
                 fout.write(f"\n\n Timp gasire solutie: {t2 - t1} \n")
+                fout.write(f"Numar maxim de noduri in memorie: {self.nr_noduri}\n")
                 fout.write("\n----------------\n")
                 nr_solutii_cautate -= 1
                 if nr_solutii_cautate == 0:
@@ -109,18 +111,20 @@ class Graph:
     #
     @stopit.threading_timeoutable(default="timeout dfi")
     def depth_first_iterativ(self, t1, fout, nr_solutii_cautate=1):
-        for i in range(1, self.nr_noduri + 1):
+        for i in range(1, self.nr_noduri + 2):
             if nr_solutii_cautate == 0:
                 return
-            fout.write("**************\nAdancime maxima: ", i)
-            nr_solutii_cautate = self.dfi(NodParcurgere(self.start.info, None), t1, fout, 3, nr_solutii_cautate)
+            fout.write(f"**************\nAdancime maxima: {i}")
+            nr_solutii_cautate = self.dfi(NodParcurgere(self.start.info, None, self.start.nr_bile), t1, fout,
+                                          3, nr_solutii_cautate)
 
-    def dfi(self, t1, fout, nod_curent, adancime, nr_solutii_cautate):
+    def dfi(self, nod_curent, t1, fout,adancime, nr_solutii_cautate=10):
         if adancime == 1 and nod_curent.testeaza_scop():
             t2 = time.time()
             fout.write("Solutie: \n")
             nod_curent.afis_drum(fout)
             fout.write(f"\n\n Timp gasire solutie: {t2 - t1} \n")
+            fout.write(f"Numar maxim de noduri in memorie: {self.nr_noduri}\n")
             fout.write("\n----------------\n")
             nr_solutii_cautate -= 1
             if nr_solutii_cautate == 0:
@@ -133,7 +137,7 @@ class Graph:
         return nr_solutii_cautate
 
     @stopit.threading_timeoutable(default="timeout a_star")
-    def a_star(self, t1, fout, euristica, nr_solutii_cautate):
+    def a_star(self, t1, fout, euristica, nr_solutii_cautate=10):
         # in coada vom avea doar noduri de tip NodParcurgere (nodurile din arborele de parcurgere)
         c = queue.PriorityQueue()
         c.put(NodParcurgere(self.start.info, None, self.start.nr_bile, 0, self.start.calculeaza_h(euristica)))
@@ -146,6 +150,7 @@ class Graph:
                 fout.write("Solutie: \n")
                 nod_curent.afis_drum(fout)
                 fout.write(f"\n\n Timp gasire solutie: {t2 - t1} \n")
+                fout.write(f"Numar maxim de noduri in memorie: {self.nr_noduri}\n")
                 fout.write("\n----------------\n")
                 nr_solutii_cautate -= 1
                 if nr_solutii_cautate == 0:
@@ -171,6 +176,7 @@ class Graph:
                 fout.write("Solutie: \n")
                 nod_curent.afis_drum(fout)
                 fout.write(f"\n\n Timp gasire solutie: {t2 - t1} \n")
+                fout.write(f"Numar maxim de noduri in memorie: {self.nr_noduri}\n")
                 fout.write("\n----------------\n")
                 return
             l_succesori = nod_curent.genereaza_succesori()
@@ -205,3 +211,45 @@ class Graph:
                     l_open.insert(i, s)
                 else:
                     l_open.append(s)
+
+    @stopit.threading_timeoutable(default="timeout a_star_optimizat")
+    def ida_star(self, t1, fout, euristica, nr_sol_cautate=10):
+
+        nod_start = NodParcurgere(self.start.info, None, self.start.nr_bile, 0, self.start.calculeaza_h(euristica))
+        limita = nod_start.f
+        while True:
+            fout.write(f"Limita de pornire: {limita}\n")
+            nr_sol_cautate, rez = self.construieste_drum(t1, fout, nod_start, limita, nr_sol_cautate)
+            if rez == "gata":
+                break
+            if rez == float('inf'):
+                fout.write("Nu mai exista solutii!\n")
+                break
+            limita = rez
+            fout.write(f">>> Limita noua: {limita}\n")
+
+    def construieste_drum(self, t1, fout, nod_curent, limita, nr_sol_cautate):
+        fout.write(f"A ajuns la:\n{nod_curent}")
+        if nod_curent.f > limita:
+            return nr_sol_cautate, nod_curent.f
+        if nod_curent.testeaza_scop() and nod_curent.f == limita:
+            t2 = time.time()
+            fout.write("Solutie: \n")
+            nod_curent.afis_drum()
+            fout.write(f"\n\n Timp gasire solutie: {t2 - t1} \n")
+            fout.write(f"Numar maxim de noduri in memorie: {self.nr_noduri}\n")
+            fout.write("\n-------------------------\n")
+            nr_sol_cautate -= 1
+            if nr_sol_cautate == 0:
+                return 0, "gata"
+        l_succesori = nod_curent.genereaza_succesori()
+        minim = float('inf')
+        for s in l_succesori:
+            nr_sol_cautate, rez = self.construieste_drum(t1, fout, s, limita, nr_sol_cautate)
+            if rez == "gata":
+                return 0, "gata"
+            fout.write(f"Compara {rez} cu {minim}\n")
+            if rez < minim:
+                minim = rez
+                fout.write(f"Noul minim: {minim}\n")
+        return nr_sol_cautate, minim
