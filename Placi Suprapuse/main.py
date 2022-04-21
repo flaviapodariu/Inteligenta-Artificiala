@@ -17,8 +17,6 @@ else:
 lista_inputuri = os.listdir(input_folder)
 
 for input_file in lista_inputuri:
-    # print(input_file)
-
     fout = open(output_folder + "/out_" + input_file, "w")
     g = Graph(input_folder + "/" + input_file)
 
@@ -49,18 +47,12 @@ for input_file in lista_inputuri:
     fout.write("DFI \n\n")
     g.depth_first_iterativ(time.time(), fout, NSOL, timeout=TIMEOUT)
 
-    # fout.write("IDA* -> euristica banala \n\n")
-    # g.ida_star(time.time(), fout, "banala", NSOL, timeout=TIMEOUT)
-    #
-    # fout.write("IDA* -> euristica admisibila 1\n\n")
-    # g.ida_star(time.time(), fout, "admisibila1", NSOL, timeout=TIMEOUT)
-    #
-    # fout.write("IDA* -> euristica admisibila 2\n\n")
-    # g.ida_star(time.time(), fout, "admisibila2", NSOL, timeout=TIMEOUT)
+    fout.write("IDA* -> euristica banala \n\n")
+    g.ida_star(time.time(), fout, "banala", NSOL, timeout=TIMEOUT)
 
-# g = Graph("inputs/no_ans.txt")
-# l = g.start.genereaza_succesori()
-# for nod in l:
-#     print(nod)
-# g.breadth_first()
-# g.ida_star("admisibila1", 1)
+    fout.write("IDA* -> euristica admisibila 1\n\n")
+    g.ida_star(time.time(), fout, "admisibila1", NSOL, timeout=TIMEOUT)
+
+    fout.write("IDA* -> euristica admisibila 2\n\n")
+    g.ida_star(time.time(), fout, "admisibila2", NSOL, timeout=TIMEOUT)
+
