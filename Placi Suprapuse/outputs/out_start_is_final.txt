@@ -1,2 +1,25 @@
+Breadth First 
+
+Depth First 
+
 A* -> euristica banala 
 
+A* -> euristica admisibila 1
+
+A* -> euristica neadmisibila
+
+A* optimizat -> euristica banala
+
+A* optimizat -> euristica admisibila 1
+
+A* optimizat -> euristica neadmisibila
+
+DFI 
+
+**************
+Adancime maxima: 1**************
+Adancime maxima: 2**************
+Adancime maxima: 3**************
+Adancime maxima: 4**************
+Adancime maxima: 5**************
+Adancime maxima: 6

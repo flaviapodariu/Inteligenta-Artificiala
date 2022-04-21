@@ -15,6 +15,14 @@ class NodParcurgere:
     def testeaza_scop(self):
         return True if self.nr_bile == 0 else False
 
+    def nu_are_solutii(self):
+        # daca un nivel intreg din nod nu are spatii => bila nu are pe unde sa cada
+        for nivel in self.info:
+            for elem in nivel:
+                if elem[2] == '.':
+                    return False  # daca gasesc un spatiu pot avea solutii
+            return True  # daca nu trec la urm nivel inseamna ca un nivel nu are spatii
+
     def obtine_drum(self):
         l = [self]
         nod = self
@@ -26,22 +34,26 @@ class NodParcurgere:
     def afis_drum(self, fout, afis_cost=True, afis_lung=True):  # returneaza si lungimea drumului
         l = self.obtine_drum()
         for i, nod in enumerate(l):
-            fout.write(f"{i + 1}),\n {nod}\n")
+            fout.write(f"{i + 1})\n{nod}\n")
         if afis_cost:
             fout.write(f"Cost: {self.g}\n")
         if afis_lung:
             fout.write(f"Lungime: {len(l)}\n")
         return len(l)
 
+    def afis_drum(self, afis_cost=True, afis_lung=True):  # returneaza si lungimea drumului
+        l = self.obtine_drum()
+        for i, nod in enumerate(l):
+            print(f"{i + 1})\n{nod}\n")
+        if afis_cost:
+            print(f"Cost: {self.g}\n")
+        # if afis_lung:
+        #     fout.write(f"Lungime: {len(l)}\n")
+        return len(l)
+
     def __repr__(self):
         sir = ""
-        for linie in self.info:
-            for elem in linie:
-                lungime = elem[1] - elem[0] + 1
-                for _ in range(lungime):
-                    sir += elem[2]
-            sir += "\n"
-        sir += "Cost " + str(self.f) + "\n"
+        sir += str(self.info)
         return sir
 
     def __str__(self):
@@ -62,29 +74,28 @@ class NodParcurgere:
         if euristica == "banala":
             return 0 if self.testeaza_scop() else 1
         elif euristica == "admisibila1":
-            self.h = self.nr_bile
-            return self.h
+            return self.nr_bile
         elif euristica == "neadmisibila":
-            self.h = -self.nr_bile
-            return self.h
+            return -self.nr_bile
         # elif euristica == "admisibila2":
 
     def genereaza_succesori(self, tip_euristica="euristica banala"):
         lista_succesori = []
-        # if tip_euristica == "euristica banala":
-        #     start_cautare = 0
-        # elif tip_euristica == "euristica1":
-        #     start_cautare = -1
-        #     for idx_nivel, nivel in enumerate(self.info):
-        #         for placa in nivel:
-        #             if placa[2] == '*':
-        #                 start_cautare = idx_nivel
-        #                 break
-        #         if start_cautare != -1:
-        #             break
-        #     start_cautare = max(0, start_cautare)
 
+        start_cautare = -1
         for idx_nivel, nivel in enumerate(self.info):
+            for placa in nivel:
+                if placa[2] == '*':
+                    start_cautare = idx_nivel
+                    break
+            if start_cautare != -1:
+                break
+        start_cautare = max(0, start_cautare)
+
+        if self.nu_are_solutii():
+            return []
+
+        for idx_nivel, nivel in enumerate(self.info[start_cautare:]):
             for idx_placa, placa in enumerate(nivel):
 
                 placa_prec = nivel[max(0, idx_placa - 1)][2]
@@ -173,8 +184,16 @@ class NodParcurgere:
         return NodParcurgere(copie, self, nr_bile, 1 + lung_placa_cost)
 
     def bila_sparta_impingere(self, idx_nivel, idx_placa, directie):
-        # stim ca self.info[idx_nivel][idx_placa+directie] e un spatiu
-        # pt ca apelam functia din mutare_bile()
+        """
+        stim ca self.info[idx_nivel][idx_placa+directie] e un spatiu
+        pt ca apelam functia din mutare_bile()
+        :param idx_nivel: nivelul bilei
+        :param idx_placa: nr placii pe de nivel unde se afla bila
+        :param directie: directia de deplasare
+        :return: True pt bila sparta
+                False si indexul placii peste care va cadea bila integra
+        """
+
         lim = len(self.info) - 1
         if directie == 1:
             idx_spatiu = self.info[idx_nivel][idx_placa][1] + directie
@@ -184,9 +203,6 @@ class NodParcurgere:
         idx_safe1 = min(idx_nivel + 1, lim)
         idx_placa_niv1 = bisect_right(self.info[idx_safe1], idx_spatiu, key=lambda x: x[0])
         idx_placa_niv1 = min(idx_placa_niv1, len(self.info[idx_safe1]) - 1)
-
-        if len(self.info) < 3:
-            return False, idx_placa_niv1 - 1
 
         if self.info[idx_safe1][idx_placa_niv1][1] >= idx_spatiu and self.info[idx_safe1][idx_placa_niv1][
             2] == '.':
@@ -211,12 +227,35 @@ class NodParcurgere:
 
         test_bila = self.bila_sparta_impingere(idx_nivel, idx_placa, directie)
         if test_bila[0]:
+            # bila se sparge
             return
-        elif test_bila[1] != -1:
-            print(test_bila[1], idx_nivel)
+        else:
+            # bila/bielele se muta cel putin pe nivelul curent
+            if directie == 1:
+                spatiu = [copie[idx_nivel][idx_placa - 1][0], copie[idx_nivel][idx_placa - 1][0], '.']
+                idx_inserare = max(0, idx_placa - 2 * directie)
+            else:
+                spatiu = [copie[idx_nivel][idx_placa + 1][1], copie[idx_nivel][idx_placa + 1][1], '.']
+                idx_inserare = min(idx_placa - 2 * directie, len(copie[idx_nivel])-1)
+
+            if copie[idx_nivel][idx_inserare][2] != '.':
+                copie[idx_nivel].insert(idx_inserare, spatiu)
+                if directie == 1:
+                    # in cazul acesta idx_inserare e mai mic decat index placa
+                    # trebuie mentinut indexul corect al bilelor
+                    idx_placa += 1
+            else:
+                if directie == 1:
+                    copie[idx_nivel][idx_inserare][1] += 1
+                else:
+                    copie[idx_nivel][idx_inserare][0] -= 1
+            # copie[idx_nivel].insert(idx_placa)
+
+        if test_bila[1] != -1:
+            # bila cade pe nivelul urmator
             placa_schimb = copie[idx_nivel + 1][test_bila[1]]
-            idx_bila_cazuta = copie[idx_nivel][idx_placa][0] - 1 if directie == -1 else copie[idx_nivel][idx_placa][
-                                                                                            1] + 1
+            idx_bila_cazuta = copie[idx_nivel][idx_placa][0] if directie == -1 else copie[idx_nivel][idx_placa][
+                                                                                            1]
 
             if placa_schimb[0] == placa_schimb[1]:
                 placa_schimb[2] = '*'
@@ -224,21 +263,16 @@ class NodParcurgere:
                 bila = [idx_bila_cazuta, idx_bila_cazuta, '*']
                 copie[idx_nivel + 1].insert(test_bila[1], bila)
                 if directie == 1:
-                    spatiu = [copie[idx_nivel][idx_placa - 1][0], copie[idx_nivel][idx_placa - 1][0], '.']
                     placa_schimb[0] += directie
                 else:
-                    spatiu = [copie[idx_nivel][idx_placa + 1][1], copie[idx_nivel][idx_placa + 1][1],
-                              '.']  # check for indexing problems
                     placa_schimb[1] += directie
 
                 if placa_schimb[0] > placa_schimb[1]:
                     copie[idx_nivel + 1].pop(test_bila[1])
-
-                if copie[idx_nivel][min(idx_placa - 2 * directie, len(copie[idx_nivel]) - 1)][2] != '.':
-                    copie[idx_nivel].insert(min(idx_placa - 2 * directie, len(copie[idx_nivel])), spatiu)
-                    # indexul placii cu bile nu se va mai muta dupa noua inserare (inserarea se va face dupa idx_placa)
-                else:
-                    copie[idx_nivel][idx_placa - 2 * directie][1] += 1
+        # else:
+        #     if directie == 1:
+        #         id
+        #     copie[idx_nivel].pop(idx_placa+1)
 
         copie[idx_nivel][idx_placa][0] += directie
         copie[idx_nivel][idx_placa][1] += directie
@@ -262,7 +296,7 @@ class NodParcurgere:
             if prec[0] > prec[1]:
                 copie[idx_nivel].pop(idx_placa - 1)
 
-        copie[idx_nivel].pop(idx_placa)
+        copie[idx_nivel].pop(idx_placa+directie)
         copie[nr_elem_nivel], nr_bile = self.elimina_bile(copie[nr_elem_nivel])
 
         return NodParcurgere(copie, self, nr_bile, 2 * (1 + lung_placa_cost))

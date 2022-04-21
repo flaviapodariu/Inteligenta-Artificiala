@@ -1,0 +1,6 @@
+Breadth First 
+
+Depth First 
+
+A* -> euristica banala 
+

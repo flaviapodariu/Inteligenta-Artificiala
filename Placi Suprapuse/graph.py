@@ -85,17 +85,15 @@ class Graph:
         # in coada vom avea doar noduri de tip NodParcurgere (nodurile din arborele de parcurgere)
         c = queue.Queue()
         c.put(NodParcurgere(self.start.info, None, self.start.nr_bile))
-        n_bile = sys.maxsize
+        loop_inf = False
 
-        while not c.empty():
+        while not c.empty() and not loop_inf:
             nod_curent = c.get()
-            while nod_curent.nr_bile > n_bile:
-                nod_curent = c.get()
 
             if nod_curent.testeaza_scop():
                 t2 = time.time()
                 fout.write("Solutie:\n")
-                nod_curent.afis_drum(fout)
+                nod_curent.afis_drum()
                 fout.write(f"\n\n Timp gasire solutie: {t2 - t1} \n")
                 fout.write(f"Numar maxim de noduri in memorie: {self.nr_noduri}\n")
                 fout.write("\n----------------\n")
@@ -106,6 +104,9 @@ class Graph:
             nr_succ_noi = len(l_succesori)
             self.nr_noduri += nr_succ_noi
             for succ in l_succesori:
+                if succ.info == self.start.info:
+                    loop_inf = True
+                    break
                 c.put(succ)
 
     #

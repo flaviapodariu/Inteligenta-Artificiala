@@ -1,2 +1,2 @@
-aa*bb.cc
-ffff...g
+aa*.bbcc
+ffffgggg

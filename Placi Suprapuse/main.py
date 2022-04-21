@@ -18,38 +18,36 @@ lista_inputuri = os.listdir(input_folder)
 
 for input_file in lista_inputuri:
     # print(input_file)
-    g = Graph(input_folder + "/" + input_file)
-    # g = Graph(os.path.join(input_folder, input_file))
-    # print(os.path.join(output_folder, "out_" + input_file)
 
     fout = open(output_folder + "/out_" + input_file, "w")
+    g = Graph(input_folder + "/" + input_file)
 
-    # fout.write("Breadth First \n\n")
-    # g.breadth_first(time.time(), fout, NSOL, timeout=TIMEOUT)
-    #
-    # # fout.write("Depth First \n\n")
-    # g.depth_first(time.time(), fout, NSOL, timeout=TIMEOUT)
-    #
+    fout.write("Breadth First \n\n")
+    g.breadth_first(time.time(), fout, NSOL, timeout=TIMEOUT)
+
+    fout.write("Depth First \n\n")
+    g.depth_first(time.time(), fout, NSOL, timeout=TIMEOUT)
+
     fout.write("A* -> euristica banala \n\n")
     g.a_star(time.time(), fout, "banala", NSOL, timeout=TIMEOUT)
-    #
-    # fout.write("A* -> euristica admisibila 1\n\n")
-    # g.a_star(time.time(), fout, "admisibila1", NSOL, timeout=TIMEOUT)
-    #
-    # fout.write("A* -> euristica neadmisibila\n\n")
-    # g.a_star(time.time(), fout, "neadmisibila", NSOL, timeout=TIMEOUT)
-    #
-    # fout.write("A* optimizat -> euristica banala\n\n")
-    # g.a_star_optimizat(time.time(), fout, "banala", timeout=TIMEOUT)
-    #
-    # fout.write("A* optimizat -> euristica admisibila 1\n\n")
-    # g.a_star_optimizat(time.time(), fout, "admisibila1", timeout=TIMEOUT)
-    #
-    # fout.write("A* optimizat -> euristica neadmisibila\n\n")
-    # g.a_star_optimizat(time.time(), fout, "neadmisibila", timeout=TIMEOUT)
-    #
-    # fout.write("DFI \n\n")
-    # g.depth_first_iterativ(time.time(), fout, NSOL, timeout=TIMEOUT)
+
+    fout.write("A* -> euristica admisibila 1\n\n")
+    g.a_star(time.time(), fout, "admisibila1", NSOL, timeout=TIMEOUT)
+
+    fout.write("A* -> euristica neadmisibila\n\n")
+    g.a_star(time.time(), fout, "neadmisibila", NSOL, timeout=TIMEOUT)
+
+    fout.write("A* optimizat -> euristica banala\n\n")
+    g.a_star_optimizat(time.time(), fout, "banala", timeout=TIMEOUT)
+
+    fout.write("A* optimizat -> euristica admisibila 1\n\n")
+    g.a_star_optimizat(time.time(), fout, "admisibila1", timeout=TIMEOUT)
+
+    fout.write("A* optimizat -> euristica neadmisibila\n\n")
+    g.a_star_optimizat(time.time(), fout, "neadmisibila", timeout=TIMEOUT)
+
+    fout.write("DFI \n\n")
+    g.depth_first_iterativ(time.time(), fout, NSOL, timeout=TIMEOUT)
 
     # fout.write("IDA* -> euristica banala \n\n")
     # g.ida_star(time.time(), fout, "banala", NSOL, timeout=TIMEOUT)
@@ -60,9 +58,9 @@ for input_file in lista_inputuri:
     # fout.write("IDA* -> euristica admisibila 2\n\n")
     # g.ida_star(time.time(), fout, "admisibila2", NSOL, timeout=TIMEOUT)
 
-g = Graph("inputs/no_ans.txt")
+# g = Graph("inputs/no_ans.txt")
 # l = g.start.genereaza_succesori()
 # for nod in l:
 #     print(nod)
-
+# g.breadth_first()
 # g.ida_star("admisibila1", 1)
