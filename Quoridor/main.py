@@ -1,117 +1,131 @@
 import pygame
 import sys
+from game import Game
+from state import *
+from menu import *
+from player import Player
+import time
+
+MAX_DEPTH = 4
+LINES = 9
+COLUMNS = 9
+RED = 'img/red_pawn.png'
+BLUE = 'img/blue_pawn.png'
+
+"""
+TO DO:
+    -> restrict wall placement
+    -> class Game functions
+    -> in: State, valid_pawn_move(), treat case to jump over pawn
+    -> pause button
+    
+    
+    -> in: game_over(), TEST press 'r' to play again 
+"""
+
+# only start checking for wall placement validity when player has 5 walls left
 
 
-class Cell:
-    # coordonatele nodurilor ()
-    wall_width = 11  # numar impar
-    cell_background = (255, 255, 255)
-    gap_color = (0,  0, 0)
+def set_game():
+    pygame.init()
+    size = 70 * 9 + 5
+    screen = pygame.display.set_mode(size=(size, size))
 
-    def __init__(self, left, top, w, h, display, line, col, interface, code=0):
-        self.square = pygame.Rect(left, top, w, h)
-        self.display = display
-        self.wall = [None, None, None, None]
-        # wallurile vor fi pe pozitiile 0-sus, 1-dreapta, 2-jos, 3-stanga
-        self.code = code
-        if line > 0:
-            self.wall[0] = pygame.Rect(
-                left, top - 1 - self.__class__.wall_width // 2, w, self.__class__.wall_width)
-        else:
-            self.code += 2 ** 0
-        if col < interface.columns - 1:
-            self.wall[1] = pygame.Rect(
-                left + w - self.__class__.wall_width // 2, top, self.__class__.wall_width, h)
-        else:
-            self.code += 2 ** 1
-        if line < interface.lines - 1:
-            self.wall[2] = pygame.Rect(
-                left, top + h - self.__class__.wall_width // 2, w, self.__class__.wall_width)
-        else:
-            self.code += 2 ** 2
-        if col > 0:
-            self.wall[3] = pygame.Rect(
-                left - 1 - self.__class__.wall_width // 2, top, self.__class__.wall_width, h)
-        else:
-            self.code += 2 ** 3
+    pygame.display.set_caption("Flavia Podariu - Quoridor")
+    board = Game(lines=LINES, columns=COLUMNS, screen=screen)
+    # settings made by player
+    algorithm, Game.PMIN, depth = draw_options_screen(screen, board)  # player is PMIN
+    board.set_pawns()
 
-        # print(self.wall)
-        # 0001 wall doar sus
-        # 0011 wall sus si dreapta etc
+    Game.PMAX = "red" if Game.PMIN == "blue" else "blue"  # assign other pawn to computer
+    pawn_color_h = RED if Game.PMIN == "red" else BLUE
+    pawn_color_ai = RED if Game.PMAX == "red" else BLUE
+    human = Player((LINES - 1, COLUMNS // 2), "PMIN", PLAYER2_HOME, pawn_color_h)
+    ai = Player((0, COLUMNS // 2), "PMAX", PLAYER1_HOME, pawn_color_ai)
 
-    def draw(self):
-        pygame.draw.rect(self.display, self.__class__.cell_background, self.square)
-        # bit masks=[1,2,4,8]
-        bit_mask = 1
-        for i in range(4):
-            if self.code & bit_mask:
-                if self.wall[i]:
-                    pygame.draw.rect(self.display, self.__class__.gap_color, self.wall[i])
-            bit_mask *= 2
+    curr_state = State(board, human, ai, depth)
+
+    board.draw_initial_state()
+    print("Game has started!\n", board)
+    return board, curr_state
 
 
+def play(board, curr_state):
+    while True:
+        # if curr_state.player == Game.PMIN:
+        #     print("It's player's turn!\n")
 
-class Interface:
-    screen_color = (0, 0, 0)
-    cell_size = 50
-    cell_padding = 5
-    img_size = cell_size - 2 * cell_padding
+        # if curr_state.game_over():
+        #     for event in pygame.event.get():
+        #         if event.type == pygame.K_r:
+        #             set_game()
+        #             play()
+        #     return
 
-    def __init__(self, lines=9, columns=9, screen=None):
-        self.lines = lines
-        self.columns = columns
-        self.screen = screen
+        # curr_state.player = Game.PMAX  # change player's turn
 
-        self.board = [[Cell(display=screen, left=col * (self.__class__.cell_size + 1),
-                            top=lin * (self.__class__.cell_size + 1),
-                            w=self.__class__.cell_size,
-                            h=self.__class__.cell_size,
-                            line=lines,
-                            col=columns,
-                            interface=self)
-                       for col in range(columns)] for lin in range(lines)]
+        for event in pygame.event.get():
+            # daca utilizatorul face click pe x-ul de inchidere a ferestrei
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            # #################  KEY EVENTS  #######################
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p:
+                    board.pause()
+                    print("Game is paused.Press 'p' to resume.")
+                pygame.display.update()
+            if event.type == pygame.MOUSEMOTION:
+                pass
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                pos = pygame.mouse.get_pos()
 
-        player1 = pygame.image.load('blue_pawn.png')
-        self.player1 = pygame.transform.scale(
-            player1, (self.__class__.img_size, self.__class__.img_size))
+                found_walls = []
+                for line_idx, line in enumerate(board.board):
+                    for cell_idx, cell in enumerate(line):
+                        if cell.square.collidepoint(pos):
+                            if cell.coord == curr_state.player.position:
+                                curr_state.show_valid_moves()
+                            if curr_state.valid_pawn_move(cell):
+                                curr_state.move_pawn(cell)
 
-        player2 = pygame.image.load('red_pawn.png')
-        self.player2 = pygame.transform.scale(
-            player2, (self.__class__.img_size, self.__class__.img_size))
-
-    def draw_image(self, img, cell):
-        self.screen.blit(img, (cell.square.left + self.__class__.cell_padding,
-                               cell.square.top + self.__class__.cell_padding))
-
-    def draw_initial_state(self):
-        self.screen.fill(self.__class__.screen_color)
-        for line in self.board:
-            for cell in line:
-                cell.draw()
-        self.draw_image(self.player1, self.board[0][self.columns // 2])
-        self.draw_image(self.player2, self.board[self.lines-1][self.columns // 2])
-        pygame.display.update()
-
-
-pygame.init()
-
-screen = pygame.display.set_mode(size=(460, 460))
-
-pygame.display.set_caption("Flavia Podariu - Quoridor")
-
-interf = Interface(lines=9, columns=9, screen=screen)
+                        for wall_idx, wall in enumerate(cell.wall):
+                            if wall and wall.collidepoint(pos):
+                                found_walls.append((line_idx, cell_idx, wall_idx))
+                if len(found_walls) == 2:
+                    if found_walls[0][1] == found_walls[1][1]:
+                        if found_walls[0][1] < board.columns - 1:
+                            board.draw_horizontal_wall(found_walls[0])
+                            board.draw_horizontal_wall(found_walls[1])
+                    elif found_walls[0][0] < board.lines - 1:
+                        board.draw_vertical_wall(found_walls[0])
+                        board.draw_vertical_wall(found_walls[1])
+                    pygame.display.update()
 
 
-interf.draw_initial_state()
-# bucla jocului care imi permite sa tot fac mutari
+    # else:
+    #     print("It's computer's turn!\n")
+    #     pc_t1 = int(round(time() * 1000))
+    #     if algorithm == "MINIMAX":
+    #         pc_move = curr_state.mini_max()
+    #     else:
+    #         pc_move = curr_state.alpha_beta()
+    #
+    #     curr_state.board = pc_move.best_move.board
+    #
+    #     pc_t2 = int(round(time() * 1000))
+    #     print(f"Computer took {pc_t2 - pc_t1} ms to make a move.\n")
+    #
+    #     print("Board after computer's move:\n", curr_state.board)
+    #     if curr_state.game_over():
+    #         for event in pygame.event.get():
+    #             if event.type == pygame.K_r:
+    #                 set_game()
+    #                 play()
+    #         return
+    #
+    #     curr_state.player = Game.PMIN
 
-while True:
-    for ev in pygame.event.get():
-        #daca utilizatorul face click pe x-ul de inchidere a ferestrei
-        if ev.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
-        if ev.type == pygame.KEYDOWN:
-            if ev.key == pygame.K_i:
-                interf.draw_initial_state()
-            pygame.display.update()
+
+init_board, init_state = set_game()
+play(init_board, init_state)
