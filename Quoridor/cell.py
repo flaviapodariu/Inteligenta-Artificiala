@@ -17,22 +17,22 @@ class Cell:
 
         if line > 0:
             self.wall[0] = pygame.Rect(
-                left, top - 1 - self.__class__.wall_width // 2, w, self.__class__.wall_width)
+                left-5, top - 1 - self.__class__.wall_width // 2, w, self.__class__.wall_width)
         else:
             self.code += 2 ** 0
         if col < interface.columns - 1:
             self.wall[1] = pygame.Rect(
-                left + w - self.__class__.wall_width // 2, top, self.__class__.wall_width, h)
+                left + w - self.__class__.wall_width // 2, top-5, self.__class__.wall_width, h)
         else:
             self.code += 2 ** 1
         if line < interface.lines - 1:
             self.wall[2] = pygame.Rect(
-                left, top + h - self.__class__.wall_width // 2, w, self.__class__.wall_width)
+                left-1, top + h - self.__class__.wall_width // 2, w, self.__class__.wall_width)
         else:
             self.code += 2 ** 2
         if col > 0:
             self.wall[3] = pygame.Rect(
-                left - 1 - self.__class__.wall_width // 2, top, self.__class__.wall_width, h)
+                left - 1 - self.__class__.wall_width // 2, top-1, self.__class__.wall_width, h)
         else:
             self.code += 2 ** 3
 
@@ -67,3 +67,7 @@ class Cell:
 
     def has_wall_left(self):
         return self.code & 8 == 8
+
+    def has_wall_type(self, wall_type):
+        mask = 2 ** wall_type
+        return self.code & mask == mask

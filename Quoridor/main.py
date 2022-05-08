@@ -14,7 +14,7 @@ BLUE = 'img/blue_pawn.png'
 
 """
 TO DO:
-    -> restrict wall placement
+    -> BUG: wall placement when pawn is selected
     -> class Game functions
     -> in: State, valid_pawn_move(), treat case to jump over pawn
     -> pause button
@@ -22,6 +22,7 @@ TO DO:
     
     -> in: game_over(), TEST press 'r' to play again 
 """
+
 
 # only start checking for wall placement validity when player has 5 walls left
 
@@ -81,7 +82,7 @@ def play(board, curr_state):
                 pos = pygame.mouse.get_pos()
 
                 found_walls = []
-                for line_idx, line in enumerate(board.board):
+                for line_idx, line in enumerate(curr_state.board.board):
                     for cell_idx, cell in enumerate(line):
                         if cell.square.collidepoint(pos):
                             if cell.coord == curr_state.player.position:
@@ -93,15 +94,15 @@ def play(board, curr_state):
                             if wall and wall.collidepoint(pos):
                                 found_walls.append((line_idx, cell_idx, wall_idx))
                 if len(found_walls) == 2:
-                    if found_walls[0][1] == found_walls[1][1]:
-                        if found_walls[0][1] < board.columns - 1:
-                            board.draw_horizontal_wall(found_walls[0])
-                            board.draw_horizontal_wall(found_walls[1])
+                    if found_walls[0][1] == found_walls[1][1] and found_walls[0][1] < board.columns - 1:
+                        if curr_state.board.is_wall_valid(found_walls[0]):
+                            curr_state.board.draw_horizontal_wall(found_walls[0])
+                            curr_state.board.draw_horizontal_wall(found_walls[1])
                     elif found_walls[0][0] < board.lines - 1:
-                        board.draw_vertical_wall(found_walls[0])
-                        board.draw_vertical_wall(found_walls[1])
+                        if curr_state.board.is_wall_valid(found_walls[0], "vertical"):
+                            curr_state.board.draw_vertical_wall(found_walls[0])
+                            curr_state.board.draw_vertical_wall(found_walls[1])
                     pygame.display.update()
-
 
     # else:
     #     print("It's computer's turn!\n")

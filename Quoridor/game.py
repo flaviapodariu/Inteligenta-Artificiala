@@ -90,5 +90,26 @@ class Game:
         self.board[i][j].draw_wall()
         self.board[i][j + 1].draw_wall()
 
+    def is_wall_valid(self, found_wall, direction="horizontal"):
+        i = found_wall[0]
+        j = found_wall[1]
+        wall_idx = found_wall[2]
+        if direction == "horizontal":
+            if self.board[i][j + 1].has_wall_type(wall_idx):
+                # not enough space for a new wall
+                return False
+            if self.board[i][j].has_wall_right() and self.board[i + 1][j].has_wall_right():
+                # new wall cannot be perforate an existing vertical wall
+                return False
+        elif direction == "vertical":
+            if self.board[i + 1][j].has_wall_type(wall_idx):
+                return False
+            if self.board[i][j].has_wall_down() and self.board[i][j + 1].has_wall_down():
+                return False
+        else:
+            print("Wrong wall type!")
+            return False
+        return True
+
     def pause(self):
         pass

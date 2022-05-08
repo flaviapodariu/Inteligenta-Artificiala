@@ -68,14 +68,15 @@ class State:
             move.draw(color=(144, 235, 222))
         pygame.display.update()
 
-    def move_pawn(self, cell):
-        l_player = self.player.position[0]
-        c_player = self.player.position[1]
-
-        prev_moves = self.get_valid_moves()  # getting prev moves before pawn update
+    def stop_showing_valid_moves(self):
+        prev_moves = self.get_valid_moves()
         for move in prev_moves:
             move.draw()
 
+    def move_pawn(self, cell):
+        l_player = self.player.position[0]
+        c_player = self.player.position[1]
+        self.stop_showing_valid_moves()  # deleting prev moves before pawn update
         self.player.update_pos(cell.coord)
 
         self.board.draw_pawn(self.player.pawn_img, cell)
