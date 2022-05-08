@@ -13,7 +13,7 @@ class Game:
     screen_color = (140, 145, 146)
     cell_size = 70
     cell_padding = 5
-    img_size = cell_size - 2 * cell_padding
+    pawn_size = cell_size - 2 * cell_padding
 
     def __init__(self, lines=9, columns=9, screen=None):
         self.lines = lines
@@ -29,13 +29,16 @@ class Game:
                             interface=self) for col in range(columns)]
                       for lin in range(lines)]
         # default values
-        player1 = pygame.image.load('img/red_pawn.png')
-        player2 = pygame.image.load('img/blue_pawn.png')
+        player1 = pygame.image.load('img/orang.png')
+        player2 = pygame.image.load('img/meme_man.png')
+        pause_backgr = pygame.image.load("img/paused.png")
 
         self.player1 = pygame.transform.scale(
-            player1, (self.__class__.img_size, self.__class__.img_size))
+            player1, (self.__class__.pawn_size, self.__class__.pawn_size))
         self.player2 = pygame.transform.scale(
-            player2, (self.__class__.img_size, self.__class__.img_size))
+            player2, (self.__class__.pawn_size, self.__class__.pawn_size))
+        self.pause_backgr = pygame.transform.scale(
+            pause_backgr, (pygame.display.get_surface().get_size()))
 
     def __repr__(self):
         debug_board = ""
@@ -47,16 +50,16 @@ class Game:
         return debug_board
 
     def set_pawns(self):
-        if self.__class__.PMIN == "blue":
-            player1 = pygame.image.load('img/blue_pawn.png')
-            player2 = pygame.image.load('img/red_pawn.png')
+        if self.__class__.PMIN == "Man":
+            player1 = pygame.image.load('img/meme_man.png')
+            player2 = pygame.image.load('img/orang.png')
         else:
             return
 
         self.player1 = pygame.transform.scale(
-            player1, (self.__class__.img_size, self.__class__.img_size))
+            player1, (self.__class__.pawn_size, self.__class__.pawn_size))
         self.player2 = pygame.transform.scale(
-            player2, (self.__class__.img_size, self.__class__.img_size))
+            player2, (self.__class__.pawn_size, self.__class__.pawn_size))
 
     def draw_pawn(self, pawn, cell):
         self.screen.blit(pawn, (cell.square.left + self.__class__.cell_padding,
@@ -111,5 +114,6 @@ class Game:
             return False
         return True
 
-    def pause(self):
-        pass
+
+
+

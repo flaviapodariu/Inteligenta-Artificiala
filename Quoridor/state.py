@@ -19,6 +19,7 @@ class State:
 
     def game_over(self):
         winner = "Computer has " if self.player.type == "PMAX" else "You have "
+        print(self.is_final_state())
         if self.is_final_state():
             print(f"Gave over! {winner}. Press 'r' to play again.")
 
@@ -72,6 +73,7 @@ class State:
         prev_moves = self.get_valid_moves()
         for move in prev_moves:
             move.draw()
+        pygame.display.update()
 
     def move_pawn(self, cell):
         l_player = self.player.position[0]
@@ -84,6 +86,26 @@ class State:
         self.board.board[l_player][c_player].draw()
 
         pygame.display.update()
+
+    def draw_current_state(self):
+        self.board.screen.fill(self.board.__class__.screen_color)
+        for line in self.board.board:
+            for cell in line:
+                cell.draw()
+        pl1_i, pl1_j = self.player.position
+        pl2_i, pl2_j = self.opponent.position
+        self.board.draw_pawn(self.player.pawn_img, self.board.board[pl1_i][pl1_j])
+        self.board.draw_pawn(self.opponent.pawn_img, self.board.board[pl2_i][pl2_j])
+        pygame.display.update()
+
+    def pause(self):
+        self.board.screen.blit(self.board.pause_backgr, (0, 0))
+        pygame.display.update()
+        return True
+
+    def resume(self):
+        self.draw_current_state()
+        return False
 
     def mini_max(self):
         pass

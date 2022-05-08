@@ -92,8 +92,8 @@ def draw_options_screen(display, initial_board):
         top=100,
         left=30,
         button_lst=[
-            Button(display=display, w=45, h=30, text="RED", value="red"),
-            Button(display=display, w=55, h=30, text="BLUE", value="blue")
+            Button(display=display, w=70, h=30, text="ORANG", value="Orang"),
+            Button(display=display, w=100, h=30, text="MEME MAN", value="Man")
         ],
         selected_idx=0)
 
