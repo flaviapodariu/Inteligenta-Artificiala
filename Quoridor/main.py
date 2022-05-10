@@ -42,20 +42,18 @@ def set_game():
 
     curr_state.board.draw_initial_state()
     print("Game has started!\n", board)
-    return board, curr_state, algo
+    return board, curr_state, algo, depth
 
 
-def play(board, curr_state, algorithm):
-    pawn_selected = False
-    paused = False
+def play(board, curr_state, algorithm, depth):
     t1 = int(round(time()))
     while True:
-        if curr_state.player.type == Game.PMIN:
-            print("It's player's turn!\n")
-            paused, pawn_selected, curr_state = player_turn(paused, pawn_selected, curr_state, board, t1)
+        # if curr_state.player.type == Game.PMIN:
+        #     print("It's player's turn!\n")
+            curr_state = player_turn(curr_state, board, t1)
 
-            curr_state.player.type = Game.PMAX  # change player's turn
-            curr_state.opponent.type = Game.PMIN
+            # curr_state.player.type = Game.PMAX  # change player's turn
+            # curr_state.opponent.type = Game.PMIN
         #
         # else:
         #     print("It's computer's turn!\n")
@@ -75,9 +73,11 @@ def play(board, curr_state, algorithm):
         #     curr_state.player = Game.PMIN
 
 
-def player_turn(paused, pawn_selected, curr_state, board, t1):
+def player_turn(curr_state, board, t1):
     ignore_time = 0
     not_done = True
+    paused = False
+    pawn_selected = False
     while not_done:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -85,15 +85,16 @@ def player_turn(paused, pawn_selected, curr_state, board, t1):
                 sys.exit()
             # #################  KEY EVENTS  #######################
             if event.type == pygame.KEYDOWN:
-                if event.type == pygame.K_a:
+                if event.key == pygame.K_r:
                     print(curr_state.is_final_state())
                     if curr_state.game_over():
-                        new_board, new_state, algo = set_game()
-                        play(new_board, new_state, algo)
-                        pygame.quit()
-                        sys.exit()
-                    # pygame.quit()
-                    # sys.exit()
+                        new_board, new_state, algo, difficulty = set_game()
+                        play(new_board, new_state, algo, difficulty)
+                        return
+
+                if event.key == pygame.K_q:
+                    pygame.quit()
+                    sys.exit()
 
                 if event.key == pygame.K_p:
                     if not paused:
@@ -140,10 +141,10 @@ def player_turn(paused, pawn_selected, curr_state, board, t1):
                             curr_state.board.draw_vertical_wall(found_walls[1])
                     pygame.display.update()
                     not_done = False
-    return paused, pawn_selected, curr_state
+    return curr_state
 
 
-init_board, init_state, algorithm = set_game()
-play(init_board, init_state, algorithm)
+init_board, init_state, algorithm, depth = set_game()
+play(init_board, init_state, algorithm, depth)
 
 
