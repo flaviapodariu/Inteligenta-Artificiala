@@ -79,17 +79,26 @@ class ButtonGroup:
 
 
 def draw_options_screen(display, initial_board):
-    algo_btn = ButtonGroup(
+    game_type_btn = ButtonGroup(
         top=30,
+        left=30,
+        button_lst=[Button(display=display, w=100, h=30, text="PLAYER-AI", value="p-ai"),
+                    Button(display=display, w=145, h=30, text="PLAYER-PLAYER", value="p-p"),
+                    Button(display=display, w=60, h=30, text="AI-AI", value="ai-ai")
+                    ],
+        selected_idx=0)
+
+    algo_btn = ButtonGroup(
+        top=90,
         left=30,
         button_lst=[
             Button(display=display, w=80, h=30, text="MINIMAX", value="minimax"),
             Button(display=display, w=120, h=30, text="ALPHA-BETA", value="alphabeta")
         ],
-        selected_idx=1)
+        selected_idx=0)
 
     player_btn = ButtonGroup(
-        top=100,
+        top=150,
         left=30,
         button_lst=[
             Button(display=display, w=70, h=30, text="ORANG", value="Orang"),
@@ -98,16 +107,17 @@ def draw_options_screen(display, initial_board):
         selected_idx=0)
 
     difficulty_btn = ButtonGroup(
-        top=170,
+        top=210,
         left=30,
         button_lst=[
-            Button(display=display, w=55, h=30, text="EASY", value="easy"),
-            Button(display=display, w=80, h=30, text="MEDIUM", value="med"),
-            Button(display=display, w=55, h=30, text="HARD", value="hard")
+            Button(display=display, w=55, h=30, text="EASY", value="1"),
+            Button(display=display, w=80, h=30, text="MEDIUM", value="2"),
+            Button(display=display, w=55, h=30, text="HARD", value="3")
         ],
         selected_idx=0)
 
-    start = Button(display=display, top=240, left=30, w=65, h=30, text="START", backgr_color=(155, 0, 55))
+    start = Button(display=display, top=270, left=30, w=65, h=30, text="START", backgr_color=(155, 0, 55))
+    game_type_btn.draw()
     algo_btn.draw()
     player_btn.draw()
     difficulty_btn.draw()
@@ -122,8 +132,10 @@ def draw_options_screen(display, initial_board):
                 if not algo_btn.select_by_coord(pos):
                     if not player_btn.select_by_coord(pos):
                         if not difficulty_btn.select_by_coord(pos):
-                            if start.select_by_coord(pos):
-                                display.fill((0, 0, 0))  # stergere ecran
-                                initial_board.draw_initial_state()
-                                return algo_btn.get_value(), player_btn.get_value(), difficulty_btn.get_value()
+                            if not game_type_btn.select_by_coord(pos):
+                                if start.select_by_coord(pos):
+                                    display.fill((0, 0, 0))  # stergere ecran
+                                    initial_board.draw_initial_state()
+                                    return algo_btn.get_value(), player_btn.get_value(), \
+                                           difficulty_btn.get_value(), game_type_btn.get_value()
         pygame.display.update()
